@@ -10,7 +10,7 @@ contract MockL2OutputOracle {
     mapping(uint256 => bytes32) public l2Outputs;
     uint256 public historicalTotalBlocks;
     uint256 public latestBlockTimestamp;
-    uint256 public startingBlockTimestamp;
+    uint256 public immutable startingBlockTimestamp;
 
     /**
      * Initialize the MockL2OutputOracle contract.
