@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ethereum-optimism/optimistic-specs/opnode/eth"
@@ -17,6 +18,8 @@ type inputInterface interface {
 	// SafeL2Head is the L2 Head found via the sync algorithm
 	SafeL2Head(ctx context.Context) (eth.L2BlockRef, error)
 }
+
+var newBlockTooNew = errors.New("cannot build new l2 block, constrained by l1 time")
 
 type outputInterface interface {
 	step(ctx context.Context, l2Head eth.BlockID, l2Finalized eth.BlockID, l1Window []eth.BlockID) (eth.BlockID, error)
@@ -161,6 +164,10 @@ func (s *state) loop() {
 			// 2. Ask output to create new block
 			newUnsafeL2Head, batch, err := s.output.newBlock(context.Background(), s.l2Finalized, s.l2UnsafeHead, s.l1Origin, firstOfEpoch)
 			if err != nil {
+				if errors.Is(err, newBlockTooNew) {
+					s.log.Trace("Tried to build L2 block, but latest L1 time is already reached by L2")
+					continue
+				}
 				s.log.Error("Could not extend chain as sequencer", "err", err, "l2UnsafeHead", s.l2UnsafeHead, "l1Origin", s.l1Origin)
 				continue
 			}

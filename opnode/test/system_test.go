@@ -163,7 +163,7 @@ func TestSystemE2E(t *testing.T) {
 		L2EngineAddrs: []string{endpoint(cfg.l2Verifier.nodeConfig)},
 		Rollup: rollup.Config{
 			BlockTime:            1,
-			MaxSequencerTimeDiff: 10,
+			MaxSequencerTimeDiff: 1,
 			SeqWindowSize:        2,
 			L1ChainID:            big.NewInt(900),
 			// TODO pick defaults
@@ -189,7 +189,7 @@ func TestSystemE2E(t *testing.T) {
 		L2EngineAddrs: []string{endpoint(cfg.l2Sequencer.nodeConfig)},
 		Rollup: rollup.Config{
 			BlockTime:            1,
-			MaxSequencerTimeDiff: 10,
+			MaxSequencerTimeDiff: 1,
 			SeqWindowSize:        2,
 			L1ChainID:            big.NewInt(900),
 			// TODO pick defaults

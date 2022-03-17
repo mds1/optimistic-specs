@@ -52,8 +52,8 @@ func (d *outputImpl) newBlock(ctx context.Context, l2Finalized eth.BlockID, l2Pa
 	}
 
 	timestamp := l2Info.Time() + d.Config.BlockTime
-	if timestamp >= l1Info.Time() {
-		return l2Parent, nil, errors.New("L2 Timestamp is too large")
+	if timestamp >= l1Info.Time()+d.Config.MaxSequencerTimeDiff {
+		return l2Parent, nil, newBlockTooNew
 	}
 
 	var receipts types.Receipts
@@ -138,7 +138,7 @@ func (d *outputImpl) step(ctx context.Context, l2Head eth.BlockID, l2Finalized e
 		return l2Head, fmt.Errorf("failed to fetch create batches from transactions: %w", err)
 	}
 	minL2Time := l2Info.Time() + d.Config.BlockTime
-	maxL2Time := l1Info.Time()
+	maxL2Time := l1Info.Time() + d.Config.MaxSequencerTimeDiff
 	batches = derive.FilterBatches(&d.Config, epoch, minL2Time, maxL2Time, batches)
 
 	attrsList, err := derive.PayloadAttributes(&d.Config, l1Info, receipts, batches, l2Info, minL2Time, maxL2Time)
