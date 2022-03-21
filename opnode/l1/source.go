@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/trie"
+
 	"github.com/ethereum-optimism/optimistic-specs/opnode/eth"
 	"github.com/ethereum-optimism/optimistic-specs/opnode/rollup/derive"
 	"github.com/ethereum/go-ethereum"
@@ -74,8 +76,19 @@ func (s Source) Close() {
 func (s Source) FetchL1Info(ctx context.Context, id eth.BlockID) (derive.L1Info, error) {
 	return s.client.BlockByHash(ctx, id.Hash)
 }
-func (s Source) FetchReceipts(ctx context.Context, id eth.BlockID) ([]*types.Receipt, error) {
+
+func (s Source) FetchReceipts(ctx context.Context, id eth.BlockID, receiptHash common.Hash) ([]*types.Receipt, error) {
 	_, receipts, err := s.Fetch(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Sanity-check: external L1-RPC sources are notorious for not returning all receipts,
+	// or returning them out-of-order. Verify the receipts against the expected receipt-hash.
+	hasher := trie.NewStackTrie(nil)
+	computed := types.DeriveSha(types.Receipts(receipts), hasher)
+	if receiptHash != computed {
+		return nil, fmt.Errorf("failed to validate receipts of %s, computed receipt-hash %s does not match expected hash %d", id, computed, receiptHash)
+	}
 	return receipts, err
 }
 
@@ -89,5 +102,4 @@ func (s Source) FetchTransactions(ctx context.Context, window []eth.BlockID) ([]
 		txns = append(txns, block.Transactions()...)
 	}
 	return txns, nil
-
 }
